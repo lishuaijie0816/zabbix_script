@@ -9,59 +9,58 @@ import time
 class ZabbixTools:
 
     def __init__(self):
-        self.url = "http://cube.weiche.cn/zabbix/api_jsonrpc.php"
+        self.url = "http://zabbix-server-IP/zabbix/api_jsonrpc.php"
         self.header = {"Content-Type": "application/json"}
-        self.username = "Admin"
-        self.password = "zabbix"
+        self.username = "user"
+        self.password = "password"
 
     def get_token(self):
-        # data = {
-        #     "jsonrpc": "2.0",
-        #     "method": "user.login",
-        #     "params": {
-        #         "user": self.username,
-        #         "password": self.password
-        #     },
-        #     "id": 0
-        # }
-        # r = requests.get(self.url, headers=self.header, data=json.dumps(data))
-        # auth = json.loads(r.text)
-        print(self.url, self.header, self.username, self.password)
-        # return auth["result"]
+        data = {
+                "jsonrpc": "2.0",
+                "method": "user.login",
+                "params": {
+                    "user": self.username,
+                    "password": self.password
+                },
+                "id": 1,
+            }
+        r = requests.get(self.url, headers=self.header, data=json.dumps(data))
+        auth = json.loads(r.text)['result']
+        return auth
 
-    # def getHosts(token):
-    #     data = {
-    #         "jsonrpc": "2.0",
-    #         "method": "host.get",
-    #         "params": {
-    #             "output": [
-    #                 "hostid",
-    #                 "host"
-    #             ],
-    #             "selectInterfaces": [
-    #                 "interfaceid",
-    #                 "ip"
-    #             ]
-    #         },
-    #         "id": 2,
-    #         "auth": token,
-    #
-    #     }
-    #
-    #     request = requests.post(zaurl, headers=header, data=json.dumps(data))
-    #     dict = json.loads(request.content)
-    #     return dict['result']
+    def get_Hosts(self, auth):
+        data = {
+            "jsonrpc": "2.0",
+            "method": "host.get",
+            "params": {
+                "output": [
+                    "hostid",
+                    "host"
+                ],
+                "selectInterfaces": [
+                    "interfaceid",
+                    "ip"
+                ]
+            },
+            "id": 2,
+            "auth": auth,
+
+        }
+
+        request = requests.post(self.url, headers=self.header, data=json.dumps(data))
+        dict = json.loads(request.content)['result']
+        return dict
 
 
 
 if __name__ == "__main__":
     a = ZabbixTools()
-    print(a.get_token())
-    # hostlist = getHosts(token)
-    # datafile = "zabbix.txt"
-    # fdata = open(datafile,'w')
-    # for i in hostlist:
-    #     hostid = i['hostid']
-    #     hostip = i['host']
-    #     fdata.write(hostip + ' ' + hostid + '\n')
-    # fdata.close()
+    hostlist = a.get_Hosts(a.get_token())
+    datafile = "zabbix.txt"
+    fdata = open(datafile,'w')
+    for i in hostlist:
+        hostid = i['hostid']
+        host = i['host']
+        hostip = i['interfaces'][0]['ip']
+        fdata.write(hostid + ' ' + host + ' ' + hostip + '\n')
+    fdata.close()
